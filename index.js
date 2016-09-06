@@ -8,7 +8,7 @@ const mysql = require('mysql');
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '1',
+  password: '',
   database: 'luluo_db'
 });
 connection.connect();
@@ -24,7 +24,6 @@ app.get('/add', (req, res) => {
 });
 
 app.post('/add', upload.array(), (req, res, next) => {
-  console.log(req.body);
   for(var data of req.body.result){
     connection.query(`insert into goods (title, url, price) values ('${data.title}', '${data.href}', '${data.price}')`, (err, rows, fields) => {
     });
