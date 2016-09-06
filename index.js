@@ -3,6 +3,7 @@ var app = express();
 var bodyParser = require('body-parser');
 var multer = require('multer'); // v1.0.5
 var upload = multer(); // for parsing multipart/form-data
+const PORT = 8090;
 
 const mysql = require('mysql');
 const connection = mysql.createConnection({
@@ -34,6 +35,6 @@ app.post('/add', upload.array(), (req, res, next) => {
   })
 });
 
-app.listen(8090, function(){
-  console.log(`start server on port 3000`);
+app.listen(PORT, function(){
+  console.log(`start server on port ${PORT}`);
 })
