@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+    <title>Index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" type="text/css" href="/semantic/semantic.css">
+    <script src="/jquery-2.1.4.min.js"></script>
+    <script src="/semantic/semantic.min.js"></script>
+</head>
+<body>
+    <div class="ui container">
+        <h1>HELLO WORLD</h1>
+        <form method="get" action="/search">
+            <div class="ui icon input">
+                <input type="text" placeholder="Search..." value="<?=this.s?>" name="s">
+            </div>
+        </form>
+
+        <table class="ui celled padded table">
+            <thead>
+                <tr>
+                    <th class="single line">标题</th>
+                    <th>价格</th>
+                    <th>来源</th>
+                    <th>抓取时间</th>
+                </tr></thead>
+                <tbody>
+                    <?for(var item of this.list){?>
+                    <tr>
+                        <td><?=item.title?></td>
+                        <td><?=item.price?></td>
+                        <td>京东</td>
+                        <td>2016-9-8</td>
+                    </tr>
+                    <?}?>
+                </tbody>
+            </table>
+            <div class="ui menu">
+                <a class="item">上一页</a>
+                <a class="active item">
+                    1
+                </a>
+                <div class="disabled item">
+                    ...
+                </div>
+                <a class="item">
+                    10
+                </a>
+                <a class="item">
+                    11
+                </a>
+                <a class="item">
+                    12
+                </a>
+                <a class="item">下一页</a>
+            </div>
+        </div>
+</body>
+</html>
