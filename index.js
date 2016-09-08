@@ -84,21 +84,27 @@ app.post('/add', upload.array(), (req, res, next) => {
   //console.log(req.body.result);
   for(var data of req.body.result){
     //console.log(data);
-    ((data)=> {
-      console.log(`select * from goods where url='${data.href}'`);
+    (function(data){
       connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
-        console.log(records.length);
         if(records.length == 0){
           let createdTime = moment().format("YYYY-MM-DD hh:mm:ss");
-          //console.log(`insert into goods (title, url, price, low_price, created_time) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}')`);
-          connection.query(`insert into goods (title, url, price, low_price, created_time) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}')`, (err, rows, fields) => {});
+          let insertSQL = `insert into goods (title, url, price, low_price, created_time) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}')`;
+          console.log(insertSQL);
+          connection.query(insertSQL, (err, rows, fields) => {});
         }else{
           let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
           data.price = parseFloat(data.price);
           let oldPrice = records[0].low_price;
           let lowPrice = data.price < oldPrice ? data.price : oldPrice;
-          //console.log(`update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`);
-          connection.query(`update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`)
+          let updateSQL = `update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`;
+          console.log(updateSQL);
+          connection.query(updateSQL, (err, rows) => {
+            if(err){
+              console.log(err);
+            }else{
+              console.log(rows);
+            }
+          })
         }
       });
     })(data);
