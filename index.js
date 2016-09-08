@@ -1,6 +1,7 @@
 "use strict"
 const crypto = require('crypto');
 const Segment = require('segment');
+const moment = require('moment');
 var segment = new Segment();
 segment.useDefault();
 
@@ -80,9 +81,27 @@ app.get('/add', (req, res) => {
 });
 
 app.post('/add', upload.array(), (req, res, next) => {
+  //console.log(req.body.result);
   for(var data of req.body.result){
-    connection.query(`insert into goods (title, url, price) values ('${data.title}', '${data.href}', '${data.price}')`, (err, rows, fields) => {
-    });
+    //console.log(data);
+    ((data)=> {
+      console.log(`select * from goods where url='${data.href}'`);
+      connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
+        console.log(records.length);
+        if(records.length == 0){
+          let createdTime = moment().format("YYYY-MM-DD hh:mm:ss");
+          //console.log(`insert into goods (title, url, price, low_price, created_time) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}')`);
+          connection.query(`insert into goods (title, url, price, low_price, created_time) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}')`, (err, rows, fields) => {});
+        }else{
+          let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
+          data.price = parseFloat(data.price);
+          let oldPrice = records[0].low_price;
+          let lowPrice = data.price < oldPrice ? data.price : oldPrice;
+          //console.log(`update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`);
+          connection.query(`update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`)
+        }
+      });
+    })(data);
   }
   res.send({
     code: 0,
