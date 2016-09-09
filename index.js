@@ -2,6 +2,7 @@
 const crypto = require('crypto');
 const Segment = require('segment');
 const moment = require('moment');
+const MySQLConnection = require('./mysql-connection');
 var segment = new Segment();
 segment.useDefault();
 
@@ -19,7 +20,10 @@ const connection = mysql.createConnection({
   password: '',
   database: 'luluo_db'
 });
-connection.connect();
+
+
+var conn = new MySQLConnection();
+
 var fs = require('fs'); // this engine requires the fs module
 const redis = require("redis"),
     client = redis.createClient();
@@ -82,33 +86,38 @@ app.get('/add', (req, res) => {
 
 app.post('/add', upload.array(), (req, res, next) => {
   //console.log(req.body.result);
+  connection.connect();
   for(var data of req.body.result){
     //console.log(data);
-    (function(data){
-      connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
-        if(records.length == 0){
           let createdTime = moment().format("YYYY-MM-DD hh:mm:ss");
-          let insertSQL = `insert into goods (title, url, price, low_price, created_time) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}')`;
+          let insertSQL = `insert into goods (title, url, price, low_price, created_time, come_in) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}', 'jd')`;
           console.log(insertSQL);
-          connection.query(insertSQL, (err, rows, fields) => {});
-        }else{
-          let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
-          data.price = parseFloat(data.price);
-          let oldPrice = records[0].low_price;
-          let lowPrice = data.price < oldPrice ? data.price : oldPrice;
-          let updateSQL = `update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`;
-          console.log(updateSQL);
-          connection.query(updateSQL, (err, rows) => {
-            if(err){
-              console.log(err);
-            }else{
-              console.log(rows);
-            }
-          })
-        }
-      });
-    })(data);
+          connection.query(insertSQL, (err, rows, fields) => {
+            console.log(err, rows);
+          });
+    // (function(data){
+    //   connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
+    //     if(records.length == 0){
+    //     }else{
+    //       let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
+    //       data.price = parseFloat(data.price);
+    //       let oldPrice = records[0].low_price;
+    //       let lowPrice = data.price < oldPrice ? data.price : oldPrice;
+    //       let updateSQL = `update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`;
+    //       console.log(updateSQL);
+    //       connection.query(updateSQL, (err, rows) => {
+    //         if(err){
+    //           console.log(err);
+    //         }else{
+    //           console.log(rows);
+    //         }
+    //       })
+    //     }
+    //   });
+    // })(data);
   }
+
+  connection.end();
   res.send({
     code: 0,
     message: ''
