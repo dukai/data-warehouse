@@ -43,6 +43,12 @@ app.set('views', './views'); // specify the views directory
 app.set('view engine', 'html'); // register the template engine
 
 app.use(express.static('static'));
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+
+app.listen(PORT, function(){
+  console.log(`start server on port ${PORT}`);
+})
 
 app.get('/', (req, res) => {
   res.render('index');
@@ -63,7 +69,7 @@ app.get('/search', (req, res) => {
   })
 
   client.sinter(result, (err, replies) => {
-    connection.query('select * from goods where id in (' + replies.join(',') + ') limit 10', (err, rows) => {
+    conn.fetchAll('select * from goods where id in (' + replies.join(',') + ') limit 10').then((err, rows) => {
       res.render('search', {
         list: rows,
         s: keywords
@@ -74,8 +80,6 @@ app.get('/search', (req, res) => {
 
 
 
-app.use(bodyParser.json()); // for parsing application/json
-app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
 app.get('/add', (req, res) => {
   res.send({
@@ -86,44 +90,80 @@ app.get('/add', (req, res) => {
 
 app.post('/add', upload.array(), (req, res, next) => {
   //console.log(req.body.result);
-  connection.connect();
-  for(var data of req.body.result){
-    //console.log(data);
-          let createdTime = moment().format("YYYY-MM-DD hh:mm:ss");
-          let insertSQL = `insert into goods (title, url, price, low_price, created_time, come_in) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}', 'jd')`;
-          console.log(insertSQL);
-          connection.query(insertSQL, (err, rows, fields) => {
-            console.log(err, rows);
-          });
-    // (function(data){
-    //   connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
-    //     if(records.length == 0){
-    //     }else{
-    //       let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
-    //       data.price = parseFloat(data.price);
-    //       let oldPrice = records[0].low_price;
-    //       let lowPrice = data.price < oldPrice ? data.price : oldPrice;
-    //       let updateSQL = `update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`;
-    //       console.log(updateSQL);
-    //       connection.query(updateSQL, (err, rows) => {
-    //         if(err){
-    //           console.log(err);
-    //         }else{
-    //           console.log(rows);
-    //         }
-    //       })
-    //     }
-    //   });
-    // })(data);
-  }
+  //connection.connect();
 
-  connection.end();
+  req.body.result.forEach((data, index) => {
+    let now = moment().format("YYYY-MM-DD HH:mm:ss");
+    conn.fetchRow(`select * from goods where url='${data.href}'`).then(row => {
+      if(row){
+        data.price = parseFloat(data.price);
+        let oldPrice = row.low_price;
+        let lowPrice = data.price < oldPrice ? data.price : oldPrice;
+        // console.log('begin update');
+        conn.update('goods', {
+          title: data.title, price: data.price, low_price: lowPrice, updated_time: now
+        }, {
+          id: row.id
+        }).then(rows => {
+          // console.log('update', row.id);
+          conn.insert('price_history', {
+            goods_id:row.id,
+            price: data.price,
+            created_time: now
+          }).then(id => { }, err => console.log(err));
+        }, err => console.log(err));
+      }else{
+        console.log('begin insert');
+        conn.insert('goods', {
+          title: data.title, url: data.href, price: data.price, low_price: data.price, created_time: now, come_in: 'jd'
+        }).then(goodsId => {
+          console.log('insert', goodsId);
+          conn.insert('price_history', {
+            goods_id:goodsId,
+            price: data.price,
+            created_time: now
+          }).then(id => { }, err => console.log(err));
+        }, err => console.log(err));
+      }
+
+    })
+  })
+
+
+//  for(var data of req.body.result){
+//    //console.log(data);
+//          let createdTime = moment().format("YYYY-MM-DD hh:mm:ss");
+//          let insertSQL = `insert into goods (title, url, price, low_price, created_time, come_in) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}', 'jd')`;
+//          console.log(insertSQL);
+//          connection.query(insertSQL, (err, rows, fields) => {
+//            console.log(err, rows);
+//          });
+//    // (function(data){
+//    //   connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
+//    //     if(records.length == 0){
+//    //     }else{
+//    //       let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
+//    //       data.price = parseFloat(data.price);
+//    //       let oldPrice = records[0].low_price;
+//    //       let lowPrice = data.price < oldPrice ? data.price : oldPrice;
+//    //       let updateSQL = `update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`;
+//    //       console.log(updateSQL);
+//    //       connection.query(updateSQL, (err, rows) => {
+//    //         if(err){
+//    //           console.log(err);
+//    //         }else{
+//    //           console.log(rows);
+//    //         }
+//    //       })
+//    //     }
+//    //   });
+//    // })(data);
+//  }
+
+  //connection.end();
   res.send({
     code: 0,
     message: ''
   })
 });
 
-app.listen(PORT, function(){
-  console.log(`start server on port ${PORT}`);
-})

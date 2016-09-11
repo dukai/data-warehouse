@@ -83,18 +83,56 @@ MySQLConnection.prototype = {
 
     return new Promise((resolve, reject) => {
       this.query(sql).then((rows, filed) => {
-        this.fetchOne(`select LAST_INSERT_ID()`).then(result => {
-          resolve(result);
-        }, err => {
-          reject(err);
-        })
+
+        resolve(rows.insertId);
 
       }, err => {
         reject(err);
-        this.conn.end();
       })
       this.conn.end();
     });
+  },
+
+  update(table, fileds, where){
+    if(typeof where === "undefined"){
+      where = [
+        "1=1"
+      ];
+    }
+
+    if(typeof where === 'object'){
+      if(where instanceof Array){
+        
+      }else{
+        let l = [];
+        for(let key in where){
+          l.push(`${key}='${where[key]}'`);
+        }
+        l.push("1=1");
+        where = l;
+      }
+    }
+
+    let whereString = where.join(" and ");
+
+    let keyList = [];
+    let valueList = [];
+    let keyListString, valueListString;
+    for(let key in fileds){
+      keyList.push(key);
+      valueList.push(`${key}='${fileds[key]}'`);
+    }
+
+    valueListString = valueList.join(",");
+
+    var sql = `update ${table} set ${valueListString} where ${whereString}`;
+
+    var result = this.query(sql);
+    this.conn.end();
+    return result;
+  },
+  end(){
+    this.conn.end()
   }
 }
 
