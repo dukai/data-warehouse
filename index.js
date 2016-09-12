@@ -69,6 +69,15 @@ app.get('/search', (req, res) => {
   })
 
   client.sinter(result, (err, replies) => {
+    console.log(err, replies);
+    if(err || replies.length == 0){
+      res.render('search', {
+        list: [],
+        s: keywords
+      });
+
+      return;
+    }
     conn.fetchAll('select * from goods where id in (' + replies.join(',') + ') limit 10').then((err, rows) => {
       res.render('search', {
         list: rows,
@@ -99,9 +108,13 @@ app.post('/add', upload.array(), (req, res, next) => {
         data.price = parseFloat(data.price);
         let oldPrice = row.low_price;
         let lowPrice = data.price < oldPrice ? data.price : oldPrice;
+        let highPrice = data.price > oldPrice ? data.price : oldPrice;
         // console.log('begin update');
         conn.update('goods', {
-          title: data.title, price: data.price, low_price: lowPrice, updated_time: now
+          title: data.title, price: data.price, 
+          low_price: lowPrice, 
+          high_price: highPrice, 
+          updated_time: now
         }, {
           id: row.id
         }).then(rows => {
@@ -113,11 +126,14 @@ app.post('/add', upload.array(), (req, res, next) => {
           }).then(id => { }, err => console.log(err));
         }, err => console.log(err));
       }else{
-        console.log('begin insert');
         conn.insert('goods', {
-          title: data.title, url: data.href, price: data.price, low_price: data.price, created_time: now, come_in: 'jd'
+          title: data.title, 
+          url: data.href, 
+          price: data.price, 
+          high_price: data.price, 
+          low_price: data.price, 
+          created_time: now, come_in: 'jd', trend: '0'
         }).then(goodsId => {
-          console.log('insert', goodsId);
           conn.insert('price_history', {
             goods_id:goodsId,
             price: data.price,
@@ -129,38 +145,6 @@ app.post('/add', upload.array(), (req, res, next) => {
     })
   })
 
-
-//  for(var data of req.body.result){
-//    //console.log(data);
-//          let createdTime = moment().format("YYYY-MM-DD hh:mm:ss");
-//          let insertSQL = `insert into goods (title, url, price, low_price, created_time, come_in) values ('${data.title}', '${data.href}', '${data.price}', '${data.price}', '${createdTime}', 'jd')`;
-//          console.log(insertSQL);
-//          connection.query(insertSQL, (err, rows, fields) => {
-//            console.log(err, rows);
-//          });
-//    // (function(data){
-//    //   connection.query(`select * from goods where url='${data.href}'`, (err, records) => {
-//    //     if(records.length == 0){
-//    //     }else{
-//    //       let updatedTime = moment().format("YYYY-MM-DD hh:mm:ss");
-//    //       data.price = parseFloat(data.price);
-//    //       let oldPrice = records[0].low_price;
-//    //       let lowPrice = data.price < oldPrice ? data.price : oldPrice;
-//    //       let updateSQL = `update goods set title='${data.title}', url='${data.href}', price='${data.price}', updated_time='${updatedTime}', low_price='${lowPrice}' where id=${records[0].id}`;
-//    //       console.log(updateSQL);
-//    //       connection.query(updateSQL, (err, rows) => {
-//    //         if(err){
-//    //           console.log(err);
-//    //         }else{
-//    //           console.log(rows);
-//    //         }
-//    //       })
-//    //     }
-//    //   });
-//    // })(data);
-//  }
-
-  //connection.end();
   res.send({
     code: 0,
     message: ''
