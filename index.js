@@ -109,12 +109,20 @@ app.post('/add', upload.array(), (req, res, next) => {
         let oldPrice = row.low_price;
         let lowPrice = data.price < oldPrice ? data.price : oldPrice;
         let highPrice = data.price > oldPrice ? data.price : oldPrice;
+        var trend = 0;
+        if(data.price < oldPrice){
+          trend = -1;
+        }else if(data.price > oldPrice){
+          trend = 1;
+        }
+
         // console.log('begin update');
         conn.update('goods', {
           title: data.title, price: data.price, 
           low_price: lowPrice, 
           high_price: highPrice, 
-          updated_time: now
+          updated_time: now,
+          trend: trend
         }, {
           id: row.id
         }).then(rows => {
